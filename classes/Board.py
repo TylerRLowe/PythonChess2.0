@@ -6,17 +6,22 @@ from classes.pieces.Knight import Knight
 from classes.pieces.Queen import Queen
 from classes.pieces.King import King
 from classes.pieces.Pawn import Pawn
+import ctypes
+import os
 
-
+lib = ctypes.CDLL(os.getcwd() +"/classes/c/./engine.out")
+lib.move.argtypes = [ctypes.c_uint64]
 # Game state checker
 class Board:
-	def __init__(self, width, height):
+	def __init__(self, width, height, one_player, display):
 		self.width = width
 		self.height = height
+		self.display = display
 		self.tile_width = width // 8
 		self.tile_height = height // 8
 		self.selected_piece = None
 		self.turn = 'white'
+		self.one_player = one_player
 
 		# try making it chess.board.fen()
 		self.config = [
@@ -106,6 +111,11 @@ class Board:
 
 		elif self.selected_piece.move(self, clicked_square):
 			self.turn = 'white' if self.turn == 'black' else 'black'
+			if self.one_player:
+				self.display.fill('white')
+				self.draw()
+				pygame.display.update()
+				self.engine()
 
 		elif clicked_square.piece is not None:
 			if clicked_square.piece.color == self.turn:
@@ -172,11 +182,26 @@ class Board:
 		return output
 
 
-	def draw(self, display):
+	def draw(self):
 		if self.selected_piece is not None:
 			self.get_square_from_pos(self.selected_piece.pos).highlight = True
 			for square in self.selected_piece.get_valid_moves(self):
 				square.highlight = True
 
 		for square in self.squares:
-			square.draw(display, self.turn)
+			square.draw(self.display, self.turn)
+   
+
+	def engine(self) -> ctypes.c_uint: 
+  
+		boardvalue = 0
+		shift = 63
+		for y, row in enumerate(self.config):
+			for x, piece in enumerate(row):
+				if piece != "":
+					boardvalue += 1 << shift
+				shift -= 1
+		
+
+		value_from_python = ctypes.c_uint64(boardvalue)
+		return lib.move(value_from_python)

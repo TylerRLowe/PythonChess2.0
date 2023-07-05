@@ -31,20 +31,16 @@ void initilize(){
     blackKing = whiteKing << 56;
     blackQueen = whiteQueen << 56;
 }
-
-
-int main(){
-    initilize();
-    return 0;
-}
-int firstPass = 0;
+int firstPass = 1;
 
 int color;
-
+uint64_t curr;
 int move(uint64_t board){
-    uint64_t curr = whitePawn | whiteRook | whiteKnight | whiteBishop | whiteKing | whiteQueen | blackPawn | blackRook | blackKnight | blackBishop | blackKing | blackQueen;
     if(firstPass){
-        main();
+        firstPass = 0;
+        initilize();
+        curr = whitePawn | whiteRook | whiteKnight | whiteBishop | whiteKing | whiteQueen | blackPawn | blackRook | blackKnight | blackBishop | blackKing | blackQueen;
+
         //if the board is the same as origanl board, we are white
         if(board == curr)
             color = BLACK;
@@ -52,6 +48,15 @@ int move(uint64_t board){
             color = WHITE;
         }
     }
+    curr = whitePawn | whiteRook | whiteKnight | whiteBishop | whiteKing | whiteQueen | blackPawn | blackRook | blackKnight | blackBishop | blackKing | blackQueen;
     printf("Total value: %" PRIx64 "\n%" PRIx64 " ", board , curr);
     return 0;
 }
+
+int main(){
+    move(4);
+    return 0;
+}
+
+
+

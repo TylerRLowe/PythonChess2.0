@@ -1,18 +1,19 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g
-
+LDFLAGS = -shared -o $@
 SRCDIR = classes/c
-SRC = $(SRCDIR)/eval.c $(SRCDIR)/gen.c
+SRC = $(wildcard $(SRCDIR)/*.c)
 OBJ = $(SRC:.c=.o)
 
-TARGET = engine.out
+TARGETDIR = classes/c
+TARGET = $(TARGETDIR)/engine.out
 
 .PHONY: all clean
 
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) $(LDFLAGS) $^
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<

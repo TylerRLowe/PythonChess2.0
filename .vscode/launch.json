@@ -7,7 +7,7 @@
         {
             "name": "Python: Current File",
             "type": "python",
-            "python": "C:/Users/tyler/OneDrive/Documents/personal_projs/PythonChess2.0/chess2.0/venv/Scripts/python.exe",
+            "python": "C:/Users/tyler/OneDrive/Documents/personal_projs/PythonChess2.0/venv/Scripts/python.exe",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
