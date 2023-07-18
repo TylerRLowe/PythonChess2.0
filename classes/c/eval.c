@@ -7,20 +7,81 @@
 
 
 void debugging();
+u64 pawnMask();
+void initLeaps();
+
+
+
+
+//setting up the masks:
+u64 pawnAttacks[2][64];
+
+//both sides have same attacks
+u64 knightAttacks[64];
+
+
 
 int main(){
-    u64 board = 0;
-    setBit(board,e4);
-    debugging(board);
+    pawnMask(a4,white);
 
     
     return 0;
 }
 
+
+u64 knightMask(int sq){
+    u64 bitBoard = 0ULL;
+
+    u64 attacks = 0ULL;
+    setBit(bitBoard,sq);
+
+    //  black
+    attacks |= (bitBoard >> 17 & notHFile) | (bitBoard << 17 & notAFile); 
+    attacks |= (bitBoard >> 15 & notAFile) | (bitBoard << 15 & notHFile); 
+    attacks |= (bitBoard >> 10 & notHGFile) | (bitBoard << 10 & notABFile);
+    attacks |= (bitBoard >> 6 & notABFile) | (bitBoard >> 6 & notABFile);  
+    
+    return attacks;
+
+}
+u64 pawnMask(int sq, int color){
+    u64 bitBoard = 0ULL;
+
+    u64 attacks = 0ULL;
+    setBit(bitBoard,sq);
+
+    //  black
+ 
+    attacks |= ((bitBoard << 7) & notHFile & color);
+    attacks |= ((bitBoard << 9) & notAFile & color);
+    
+    //white
+    attacks |= ((bitBoard >> 7) & notAFile & ~ color);
+    attacks |= ((bitBoard >> 9) & notHFile & ~ color);
+
+    debugging(attacks);
+    return attacks;
+}
+
+
+
+void initLeaps(){
+    //loop board
+    for(int sq = 0; sq < 64; sq++){
+        
+        pawnAttacks[white][sq] = pawnMask(white, sq);
+        pawnAttacks[black][sq] = pawnMask(black, sq);
+        knightAttacks[sq] = knightMask(sq);
+    }
+}
+
+
+
+
 void debugging(u64 board){
-    printf("   A B C D E F G\n");
+    printf("   A B C D E F G H\n");
     for(int rank = 0; rank < 8; rank++){
-        printf("%d  ", rank);
+        printf("%d  ", 8 - rank);
         for(int file = 0; file < 8; file++){
             int sq = rank*8 + file;
             //printing 1 if sq is ocupied
@@ -28,6 +89,7 @@ void debugging(u64 board){
         }
         printf("\n");
     }
+    printf("\n%llu",board);
 }
 // #include "defs.h"
 // #include <stdio.h>
