@@ -8,6 +8,8 @@
 
 void debugging();
 u64 pawnMask();
+u64 knightMask();
+u64 kingMask();
 void initLeaps();
 
 
@@ -19,15 +21,35 @@ u64 pawnAttacks[2][64];
 //both sides have same attacks
 u64 knightAttacks[64];
 
-
+u64 knightAttacks[64];
 
 int main(){
-    pawnMask(a4,white);
+    kingMask(a4);
 
     
     return 0;
 }
 
+
+u64 kingMask(int sq){
+    u64 bitBoard = 0ULL;
+
+    u64 attacks = 0ULL;
+    setBit(bitBoard,sq);
+
+    //  shifting does not loop so no need to check
+    attacks |= (bitBoard << 7 & notHFile);
+    attacks |= (bitBoard << 9 & notAFile);
+    attacks |= bitBoard << 8;
+    attacks |= (bitBoard >> 7 & notAFile);
+    attacks |= (bitBoard >> 9 & notHFile);
+    attacks |= bitBoard >> 8;
+    attacks |= (bitBoard << 1 & notAFile);
+    attacks |= (bitBoard >> 1 & notHFile);
+    debugging(attacks);
+    return attacks;
+
+}
 
 u64 knightMask(int sq){
     u64 bitBoard = 0ULL;
@@ -35,7 +57,6 @@ u64 knightMask(int sq){
     u64 attacks = 0ULL;
     setBit(bitBoard,sq);
 
-    //  black
     attacks |= (bitBoard >> 17 & notHFile) | (bitBoard << 17 & notAFile); 
     attacks |= (bitBoard >> 15 & notAFile) | (bitBoard << 15 & notHFile); 
     attacks |= (bitBoard >> 10 & notHGFile) | (bitBoard << 10 & notABFile);
@@ -44,6 +65,8 @@ u64 knightMask(int sq){
     return attacks;
 
 }
+
+
 u64 pawnMask(int sq, int color){
     u64 bitBoard = 0ULL;
 
@@ -72,8 +95,10 @@ void initLeaps(){
         pawnAttacks[white][sq] = pawnMask(white, sq);
         pawnAttacks[black][sq] = pawnMask(black, sq);
         knightAttacks[sq] = knightMask(sq);
+        knightAttacks[sq] = kingMask(sq);
     }
 }
+
 
 
 
