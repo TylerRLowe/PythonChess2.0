@@ -10,6 +10,9 @@ void debugging();
 u64 pawnMask();
 u64 knightMask();
 u64 kingMask();
+u64 bishopMask();
+u64 bishopMaskCurrent();
+u64 rookMask();
 void initLeaps();
 
 
@@ -19,12 +22,16 @@ void initLeaps();
 u64 pawnAttacks[2][64];
 
 //both sides have same attacks
-u64 knightAttacks[64];
+u64 kingtAttacks[64];
 
 u64 knightAttacks[64];
+
+
 
 int main(){
-    kingMask(a4);
+    u64 block = 0;
+    setBit(block,c5);
+    bishopMaskCurrent(d4,block);
 
     
     return 0;
@@ -32,9 +39,9 @@ int main(){
 
 
 u64 kingMask(int sq){
-    u64 bitBoard = 0ULL;
+    u64 bitBoard = 0;
 
-    u64 attacks = 0ULL;
+    u64 attacks = 0;
     setBit(bitBoard,sq);
 
     //  shifting does not loop so no need to check
@@ -46,15 +53,15 @@ u64 kingMask(int sq){
     attacks |= bitBoard >> 8;
     attacks |= (bitBoard << 1 & notAFile);
     attacks |= (bitBoard >> 1 & notHFile);
-    debugging(attacks);
+
     return attacks;
 
 }
 
 u64 knightMask(int sq){
-    u64 bitBoard = 0ULL;
+    u64 bitBoard = 0;
 
-    u64 attacks = 0ULL;
+    u64 attacks = 0;
     setBit(bitBoard,sq);
 
     attacks |= (bitBoard >> 17 & notHFile) | (bitBoard << 17 & notAFile); 
@@ -68,9 +75,9 @@ u64 knightMask(int sq){
 
 
 u64 pawnMask(int sq, int color){
-    u64 bitBoard = 0ULL;
+    u64 bitBoard = 0;
 
-    u64 attacks = 0ULL;
+    u64 attacks = 0;
     setBit(bitBoard,sq);
 
     //  black
@@ -82,7 +89,6 @@ u64 pawnMask(int sq, int color){
     attacks |= ((bitBoard >> 7) & notAFile & ~ color);
     attacks |= ((bitBoard >> 9) & notHFile & ~ color);
 
-    debugging(attacks);
     return attacks;
 }
 
@@ -99,6 +105,58 @@ void initLeaps(){
     }
 }
 
+
+u64 bishopMask(u64 sq){
+    u64 attacks = 0;
+    //rank , file
+    int r, f;
+
+    int targetRank = sq / 8;
+    int targetFile = sq % 8;
+
+
+
+    //is it possibe to combine these?
+    for(r = targetRank + 1, f = targetFile + 1; r < 7 && f < 7; r++, f++) setBit(attacks, (r * 8) + f);
+    for(r = targetRank + 1, f = targetFile - 1; r < 7 && f > 0; r++, f--) setBit(attacks, (r * 8) + f);
+    for(r = targetRank - 1, f = targetFile + 1; r > 0 && f < 7; r--, f++) setBit(attacks, (r * 8) + f);
+    for(r = targetRank - 1, f = targetFile - 1; r > 0 && f > 0; r--, f--) setBit(attacks, (r * 8) + f);
+    return attacks;
+}
+u64 bishopMaskCurrent(u64 sq, u64 block){
+    u64 attacks = 0;
+    //rank , file
+    int r, f;
+
+    int targetRank = sq / 8;
+    int targetFile = sq % 8;
+
+    
+
+    //is it possibe to combine these?
+    for(r = targetRank + 1, f = targetFile + 1; r < 8 && f < 8 && !((bit << ((r * 8) + f)) & block); r++, f++) setBit(attacks, (r * 8) + f);
+    for(r = targetRank + 1, f = targetFile - 1; r < 8 && f > -1 && !((bit << ((r * 8) + f)) & block); r++, f--) setBit(attacks, (r * 8) + f);
+    for(r = targetRank - 1, f = targetFile + 1; r > -1 && f < 8 && !(bit << (((r * 8) + f)) & block); r--, f++) setBit(attacks, (r * 8) + f);
+    for(r = targetRank - 1, f = targetFile - 1; r > -1 && f > -1 && !(bit << (((r * 8) + f)) & block); r--, f--) setBit(attacks, (r * 8) + f);
+    debugging(attacks);
+    return attacks;
+}
+u64 rookMask(u64 sq){
+    u64 attacks = 0;
+    //rank , file
+    int r, f;
+
+    int targetRank = sq / 8;
+    int targetFile = sq % 8;
+
+    //combine?
+    for(r = targetRank + 1; r < 7; r++) setBit(attacks,(r * 8) + targetFile);
+    for(f = targetFile - 1;f > 0;f--) setBit(attacks,(targetRank * 8) + f);
+    for(f = targetFile + 1; f < 7; f++) setBit(attacks,(targetRank * 8) + f);
+    for(r = targetRank - 1; r > 0; r--) setBit(attacks,(r * 8) + targetFile);
+
+    return attacks;
+}
 
 
 

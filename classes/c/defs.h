@@ -21,3 +21,4 @@ enum{ white, black};
 #define notABFile 18229723555195321596ULL
 #define notHFile 9187201950435737471ULL
 #define notHGFile 4557430888798830399ULL
+#define bit 1ULL
