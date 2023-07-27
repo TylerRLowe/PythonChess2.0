@@ -15,6 +15,8 @@ u64 bishopMaskCurrent();
 u64 rookMask();
 u64 rookMaskCurrent();
 void initLeaps();
+void initSliders();
+u64 setOccupency();
 
 
 
@@ -27,16 +29,14 @@ u64 kingtAttacks[64];
 
 u64 knightAttacks[64];
 
+//stolen from chess wiki magic bitboard https://www.chessprogramming.org/Main_Page
+u64 bishopMasks[64];
+u64 rookMasks[64];
+
+u64 bishopAttacks[64][512];
+u64 rookAttacks[64][4096];
 
 
-int main(){
-    u64 block = 0;
-    setBit(block,c3);
-    bishopMaskCurrent(d4,block);
-
-    
-    return 0;
-}
 
 
 u64 kingMask(int sq){
@@ -118,10 +118,10 @@ u64 bishopMask(u64 sq){
 
 
     //is it possibe to combine these?
-    for(r = targetRank + 1, f = targetFile + 1; r < 7 && f < 7; r++, f++) setBit(attacks, (r * 8) + f);
-    for(r = targetRank + 1, f = targetFile - 1; r < 7 && f > 0; r++, f--) setBit(attacks, (r * 8) + f);
-    for(r = targetRank - 1, f = targetFile + 1; r > 0 && f < 7; r--, f++) setBit(attacks, (r * 8) + f);
-    for(r = targetRank - 1, f = targetFile - 1; r > 0 && f > 0; r--, f--) setBit(attacks, (r * 8) + f);
+    for(r = targetRank + 1, f = targetFile + 1; r < 7 && f < 7; r++, f++) setBit(attacks, ((r * 8) + f));
+    for(r = targetRank + 1, f = targetFile - 1; r < 7 && f > 0; r++, f--) setBit(attacks, ((r * 8) + f));
+    for(r = targetRank - 1, f = targetFile + 1; r > 0 && f < 7; r--, f++) setBit(attacks, ((r * 8) + f));
+    for(r = targetRank - 1, f = targetFile - 1; r > 0 && f > 0; r--, f--) setBit(attacks, ((r * 8) + f));
     return attacks;
 }
 u64 bishopMaskCurrent(u64 sq, u64 block){
@@ -136,11 +136,10 @@ u64 bishopMaskCurrent(u64 sq, u64 block){
 
     //is it possibe to combine these?
     //doing the extra bit set to set attacker as true
-    for(r = targetRank + 1, f = targetFile + 1; r < 8 && f < 8 && !((bit << (((r -1) * 8) + f - 1)) & block); r++, f++) setBit(attacks, (r * 8) + f);
-    for(r = targetRank + 1, f = targetFile - 1; r < 8 && f > -1 && !((bit << (((r - 1) * 8) + f + 1)) & block); r++, f--) setBit(attacks, (r * 8) + f);
-    for(r = targetRank - 1, f = targetFile + 1; r > -1 && f < 8 && !(bit << ((((r + 1) * 8) + f - 1)) & block); r--, f++) setBit(attacks, (r * 8) + f);
-    for(r = targetRank - 1, f = targetFile - 1; r > -1 && f > -1 && !(bit << ((((r + 1) * 8) + f + 1)) & block); r--, f--) setBit(attacks, (r * 8) + f);
-    debugging(attacks);
+    for(r = targetRank + 1, f = targetFile + 1; r < 8 && f < 8 && !((bit << (((r -1) * 8) + f - 1)) & block); r++, f++) setBit(attacks, ((r * 8) + f));
+    for(r = targetRank + 1, f = targetFile - 1; r < 8 && f > -1 && !((bit << (((r - 1) * 8) + f + 1)) & block); r++, f--) setBit(attacks, ((r * 8) + f));
+    for(r = targetRank - 1, f = targetFile + 1; r > -1 && f < 8 && !(bit << ((((r + 1) * 8) + f - 1)) & block); r--, f++) setBit(attacks, ((r * 8) + f));
+    for(r = targetRank - 1, f = targetFile - 1; r > -1 && f > -1 && !(bit << ((((r + 1) * 8) + f + 1)) & block); r--, f--) setBit(attacks, ((r * 8) + f));
 
     return attacks;
 }
@@ -154,10 +153,10 @@ u64 rookMask(u64 sq){
     int targetFile = sq % 8;
 
     //combine?
-    for(r = targetRank + 1; r < 7; r++) setBit(attacks,(r * 8) + targetFile);
-    for(r = targetRank - 1; r > 0; r--) setBit(attacks,(r * 8) + targetFile);
-    for(f = targetFile + 1; f < 7; f++) setBit(attacks,(targetRank * 8) + f);
-    for(f = targetFile - 1;f > 0;f--) setBit(attacks,(targetRank * 8) + f);
+    for(r = targetRank + 1; r < 7; r++) setBit(attacks,((r * 8) + targetFile));
+    for(r = targetRank - 1; r > 0; r--) setBit(attacks,((r * 8) + targetFile));
+    for(f = targetFile + 1; f < 7; f++) setBit(attacks,((targetRank * 8) + f));
+    for(f = targetFile - 1;f > 0;f--) setBit(attacks,((targetRank * 8) + f));
    
 
     return attacks;
@@ -174,13 +173,38 @@ u64 rookMaskCurrent(u64 sq, u64 block){
     
 
     //is it possibe to combine these?
-    for(r = targetRank + 1; r < 8 && !((bit << (((r - 1)* 8) + targetFile)) & block); r++) setBit(attacks, (r * 8) + targetFile);
-    for(r = targetRank - 1; r > -1  && !(bit << ((((r + 1)* 8) + targetFile)) & block); r--) setBit(attacks, (r * 8) + targetFile);
-    for(f = targetFile + 1; f < 8 && !(bit << (((targetRank * 8) + f-1)) & block);f++) setBit(attacks, (targetRank * 8) + f);
-    for(f = targetFile - 1; f > -1 && !((bit << ((targetRank * 8) + f +1)) & block); f--) setBit(attacks, (targetRank * 8) + f);
+    for(r = targetRank + 1; r < 8 && !((bit << (((r - 1)* 8) + targetFile)) & block); r++) setBit(attacks, ((r * 8) + targetFile));
+    for(r = targetRank - 1; r > -1  && !(bit << ((((r + 1)* 8) + targetFile)) & block); r--) setBit(attacks, ((r * 8) + targetFile));
+    for(f = targetFile + 1; f < 8 && !(bit << (((targetRank * 8) + f-1)) & block);f++) setBit(attacks, ((targetRank * 8) + f));
+    for(f = targetFile - 1; f > -1 && !((bit << ((targetRank * 8) + f +1)) & block); f--) setBit(attacks, ((targetRank * 8) + f));
     return attacks;
 }
 
+void initSliders(int bishop){
+    for(int sq = 0; sq < 64; sq ++){
+        bishopMasks[sq] = bishopMask(sq);
+        rookMasks[sq] = rookMask(sq);
+
+        u64 attacks = bishop ? bishopMasks[sq] : rookMasks[sq];
+
+        int releventBits = bitCount(attacks);
+
+        int occupencyI = 1 << releventBits;
+        for(int i = 0; i < occupencyI; i++){
+            if(bishop){
+                u64 occupency = setOccupency(i, releventBits, attacks);
+                int magic = (occupency * bishopMagicNumbers[sq]) >> (64 - bRB[sq]);
+                bishopAttacks[sq][magic] = bishopMaskCurrent(sq, occupency);
+            }
+            else{ //rook
+                u64 occupency = setOccupency(i, releventBits, attacks);
+                int magic = (occupency * rookMagicNumbers[sq]) >> (64 - rRB[sq]);
+                rookAttacks[sq][magic] = rookMaskCurrent(sq, occupency);
+            }
+        }
+
+    }
+}
 
 
 void debugging(u64 board){
@@ -196,69 +220,50 @@ void debugging(u64 board){
     }
     printf("\n%llu",board);
 }
-// #include "defs.h"
-// #include <stdio.h>
-// #include <stdint.h>
-// #include <inttypes.h>
 
-// uint64_t whitePawn;
-// uint64_t whiteRook;
-// uint64_t whiteKnight;
-// uint64_t whiteBishop;
-// uint64_t whiteKing;
-// uint64_t whiteQueen;
-// uint64_t blackPawn;
-// uint64_t blackKnight;
-// uint64_t blackBishop;
-// uint64_t blackKing;
-// uint64_t blackQueen;
-// uint64_t blackRook;
-// uint64_t squares[64];
+//used for magic indicies
+//is already optimal
+//https://www.chessprogramming.org/Magic_Bitboards
+u64 setOccupency(int i, int bitC, u64 attacks){
+    u64 occupency = 0ULL;
+    
+    for(int j = 0; j < bitC; j++){
+        int sq = getLSB(attacks);
 
-// // making the starting positions
-// void initilize(){
-//     //bottom right square = bit 0 , top right = bit 63
-//     whitePawn = 0xFF00;
-//     whiteRook = 0x81;
-//     whiteKnight = 0x42;
-//     whiteBishop = 0x24;
-//     whiteKing = 0x8;
-//     whiteQueen = 0x10;
-//     blackPawn = whitePawn << 40;
-//     blackRook = whiteRook << 56;
-//     blackKnight = whiteKnight << 56;
-//     blackBishop = whiteBishop << 56;
-//     blackKing = whiteKing << 56;
-//     blackQueen = whiteQueen << 56;
-// }
-// int firstPass = 1;
+        popBit(attacks,sq);
 
-// int color;
-// int castleState;
-// uint64_t curr;
-// int move(uint64_t board){
-//     if(firstPass){
-//         firstPass = 0;
-//         initilize();
-//         curr = whitePawn | whiteRook | whiteKnight | whiteBishop | whiteKing | whiteQueen | blackPawn | blackRook | blackKnight | blackBishop | blackKing | blackQueen;
-
-//         //if the board is the same as origanl board, we are white
-//         if(board != curr)
-//             color = BLACK;
-//         else{
-//             color = WHITE;
-//         }
-//         castleState = CASTLE_ALL;
-//     }
-//     curr = whitePawn | whiteRook | whiteKnight | whiteBishop | whiteKing | whiteQueen | blackPawn | blackRook | blackKnight | blackBishop | blackKing | blackQueen;
-//     printf("Total value: %" PRIx64 "\n%" PRIx64 " ", board , curr);
-//     return 0;
-// }
-
-// int main(){
-//     move(4);
-//     return 0;
-// }
+        if(i & (1 << j)){
+            occupency |= (bit << sq);
+        }
+    }
+     return occupency;
+}
 
 
+static inline u64 getBishopAttacks(int sq, u64 board){
+    board &= bishopMasks[sq];
+    board *= bishopMagicNumbers[sq];
+    board >>= 64 - bRB[sq];
+    return bishopAttacks[sq][board];
+}
 
+static inline u64 getRookAttacks(int sq, u64 board){
+    board &= rookMasks[sq];
+    board *= rookMagicNumbers[sq];
+    board >>= 64 - rRB[sq];
+    return rookAttacks[sq][board];
+}
+
+
+int main(){
+    initLeaps();
+    initSliders(1);
+    initSliders(0);
+    u64 board = 0ULL;
+    setBit(board,c4);
+    debugging(board);
+    debugging(getRookAttacks(d4,board));
+
+    
+    return 0;
+}
