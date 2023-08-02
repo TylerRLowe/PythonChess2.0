@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include "defs.h"
+#include <string.h>
 
 
 
@@ -17,6 +18,8 @@ u64 rookMaskCurrent();
 void initLeaps();
 void initSliders();
 u64 setOccupency();
+void printBoard();
+void parseFEN();
 
 
 
@@ -37,7 +40,14 @@ u64 bishopAttacks[64][512];
 u64 rookAttacks[64][4096];
 
 
+//the needed boards to rep every subset of pieces
+u64 boards[12];
+u64 occ[3];
 
+int turn = -1;
+
+int enpassent = noSq;
+int castle;
 
 u64 kingMask(int sq){
     u64 bitBoard = 0;
@@ -209,10 +219,10 @@ void initSliders(int bishop){
 
 void debugging(u64 board){
     printf("   A B C D E F G H\n");
-    for(int rank = 0; rank < 8; rank++){
-        printf("%d  ", 8 - rank);
-        for(int file = 0; file < 8; file++){
-            int sq = rank*8 + file;
+    for(int r = 0; r < 8; r++){
+        printf("%d  ", 8 - r);
+        for(int f = 0; f < 8; f++){
+            int sq = r*8 + f;
             //printing 1 if sq is ocupied
             printf("%d ", getBit(board,sq) ? 1 : 0);
         }
@@ -254,15 +264,109 @@ static inline u64 getRookAttacks(int sq, u64 board){
     return rookAttacks[sq][board];
 }
 
+void printBoard(){
+    printf("   A B C D E F G H\n");
+    for( int r = 0; r < 8; r ++){
+        printf("%d  ", 8 - r);
+        for(int f = 0; f < 8; f++){
+            int sq = r * 8 + f;
+            int piece = -1;
+            for(int i = P; i <= k; i++){
+                if(getBit(boards[i],sq))
+                piece = i;
+            }
+            printf(" %c", (piece == -1) ? '-' : ascii[piece]);
+        }
+        printf("\n");
+    }
+}
+
+void parseFEN(char* fen){
+    memset(boards, 0ULL, sizeof(boards));
+    memset(occ, 0ULL, sizeof(occ));
+    turn = -1;
+    enpassent = noSq;
+    castle = 0;
+    for(int r = 0; r < 8; r++){
+        for(int f = 0; f < 8; f++){
+            int sq = r * 8 + f;
+
+            //takes the first c from fen, and inc that spot on the board
+            //this is for when there is not an empty sq
+            if((*fen <= 'z' && *fen >= 'a') || (*fen <= 'Z' && *fen >= 'A')){
+                int p = pieceChar[(int)(*fen)];
+                setBit(boards[p],sq);
+                fen++;
+            }
+            //repositioning 
+            if(*fen >= '0' && *fen <= '9'){
+                f +=  (int)(*fen - '0');
+                //parsing empty sq
+                int piece = -1;
+                for(int i = P; i <= k; i++){
+                    if(getBit(boards[i],sq))
+                    piece = i;
+                }
+                
+                if(piece == -1) f--;
+                fen++;
+            }
+        }
+        if(*fen == '/') fen++;
+
+    }
+
+    //board state
+    (*fen == 'w') ? (turn = white) : (turn = black);
+
+    fen += 2;
+    
+    while(*fen != ' '){
+        switch (*fen)
+        {
+        case  'K':
+            castle |= wk;
+            break;
+        case  'Q':
+            castle |= wq;
+            break;
+        case  'k':
+            castle |= bk;
+            break;
+        case  'q':
+            castle |= bq;
+            break;
+        case  '-':
+            break;
+        }
+        fen++;
+    }
+    fen++;
+    if(*fen != '-'){
+        int f = (int)(fen[0] - '0');
+        int r = 8 - (int)(fen[1] - '0');
+
+        enpassent = 8 * r + f;
+    }
+    else enpassent = noSq;
+
+    for(int i = P; i <= k; i ++){
+        // i / 6 gives side
+            occ[i / p] |= boards[i];
+        }
+        debugging(occ[white]);
+    occ[both] = occ[white] | occ[black];
+
+
+
+}
 
 int main(){
     initLeaps();
     initSliders(1);
     initSliders(0);
-    u64 board = 0ULL;
-    setBit(board,c4);
-    debugging(board);
-    debugging(getRookAttacks(d4,board));
+    parseFEN(trickyPosition);
+    printBoard();
 
     
     return 0;

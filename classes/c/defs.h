@@ -2,11 +2,16 @@
 #define DEFS_H
 #include <stdint.h>
 #define u64 uint64_t
-#define getBit(board,sq) (board & (1ULL << sq))
-#define setBit(board,sq) (board |= 1ULL << sq )
-#define flipBit(board,sq) (board ^= 1ULL << sq )
-#define popBit(board,sq) (board &= ~ (1ULL << sq ))
-
+#define getBit(board,sq) ((board) & (1ULL << (sq)))
+#define setBit(board,sq) ((board) |= 1ULL << (sq) )
+#define flipBit(board,sq) ((board) ^= 1ULL << (sq) )
+#define popBit(board,sq) ((board) &= ~ (1ULL << (sq )))
+//some fen strings that are helpful for testing
+#define emptyBoard "8/8/8/8/8/8/8/8 w - - "
+#define startPosition "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 "
+#define trickyPosition "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 "
+#define killerPosition "rnbqkb1r/pp1p1pPp/8/2p1pP2/1P1P4/3P3P/P1P1P3/RNBQKBNR w KQkq e6 0 1"
+#define cmkPosition "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 "
 
 static inline u64 bitCount(u64 board){
     int i = 0;
@@ -48,9 +53,30 @@ enum {  a8, b8, c8, d8, e8, f8, g8, h8,
         a4, b4, c4, d4, e4, f4, g4, h4,
         a3, b3, c3, d3, e3, f3, g3, h3,
         a2, b2, c2, d2, e2, f2, g2, h2,
-        a1, b1, c1, d1, e1, f1, g1, h1};
+        a1, b1, c1, d1, e1, f1, g1, h1, noSq};
 
-enum{ white, black};
+enum{ white, black, both};
+enum{ rook, bishop};
+//can castle
+enum{wk = 1, wq = 2, bk = 4, bq = 8};
+enum{ P, N, B, R, Q, K, p, n, b, r, q, k};
+const char ascii[] = "PNBRQKpnbrqk";
+
+int pieceChar[] = {
+    ['P'] = P,
+    ['N'] = N,
+    ['B'] = B,
+    ['R'] = R,
+    ['Q'] = Q,
+    ['K'] = K,
+    ['p'] = p,
+    ['n'] = n,
+    ['b'] = b,
+    ['r'] = r,
+    ['q'] = q,
+    ['k'] = k
+
+};
 
 const int bRB[] = {6, 5, 5, 5, 5, 5, 5, 6,
  5, 5, 5, 5, 5, 5, 5, 5,
