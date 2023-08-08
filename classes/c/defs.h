@@ -105,7 +105,15 @@ const int bRB[] = {6, 5, 5, 5, 5, 5, 5, 6,
 #define bit 1ULL
 
 
-
+#define encodeMove(so,ta,pi,pr,ca,dou,en,cast) (so) | (ta << 6) | (pi << 12) | (pr << 16) | (ca << 20) | (dou << 21) | (en << 22) | (cast <<23)
+#define getSource(move) (move & 0x3f)
+#define getTarget(move) ((move & 0xfc0) >> 6)
+#define getPiece(move) ((move & 0xf000) >> 12)
+#define getPromoted(move) ((move & 0xf0000) >> 16)
+#define getCapture(move) (move & 0x100000)
+#define getDouble(move) (move & 0x200000)
+#define getEnpassant(move) (move & 0x400000)
+#define getCastling(move) (move & 0x800000)
 
 
 
@@ -242,4 +250,9 @@ const u64 bishopMagicNumbers[64] = {
     0x8918844842082200ULL,
     0x4010011029020020ULL
 };
+
+typedef struct{
+    int moves[256];
+    int c;
+} moves;
 #endif

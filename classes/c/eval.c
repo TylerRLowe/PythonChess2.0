@@ -20,6 +20,7 @@ void initSliders();
 u64 setOccupency();
 void printBoard();
 void parseFEN();
+void moveGen();
 
 
 
@@ -264,6 +265,78 @@ static inline u64 getRookAttacks(int sq, u64 board){
     return rookAttacks[sq][board];
 }
 
+
+static inline u64 getQueenAttacks(int sq, u64 board){
+    return getBishopAttacks(sq,board) | getRookAttacks(sq,board);
+}
+//may be to long and the compiler ignores
+static inline int squareAttacked(int sq, int side){
+    //checking if there is a white pawn on 
+    if((!(side)) && (pawnAttacks[black][sq]) & boards[P]) return 1;
+
+    if(((side)) && (pawnAttacks[white][sq]) & boards[p]) return 1;
+
+    if((kingtAttacks[sq] & ((side) ? boards[k] : boards[K]))) return 1;
+
+    if((knightAttacks[sq] & ((side) ? boards[n] : boards[N]))) return 1;
+
+    if(getBishopAttacks(sq,occ[both]) & ((side) ? boards[b] : boards[B])) return 1;
+
+    if(getRookAttacks(sq,occ[both]) & ((side) ? boards[r] : boards[R])) return 1;
+
+    if(getQueenAttacks(sq,occ[both]) & ((side) ? boards[q] : boards[Q])) return 1;
+
+
+
+
+}
+static inline  void addMove(moves* list, int move){
+    list->moves[list->c] = move;
+    list->c += 1;
+}
+
+void moveGen(moves* list){
+    list->c = 0;
+    int source;
+    int target;
+    u64 board;
+    u64 attacks;
+    for (int i = P; i <= k; i++){
+        board = boards[i];
+
+        if(turn == white){
+            board = boards[i];
+
+            if (i == p){
+                while(board){
+                    source = getLSB(board);
+                    target = source - 8;
+
+                    if (!(target < a8) && !(getBit(occ[both],target))){
+                        if (source >= a7 && source <= h7){
+                            addMove(list,encodeMove(source,target,i,Q,0,0,0,0));
+                            addMove(list,encodeMove(source,target,i,R,0,0,0,0));
+                            addMove(list,encodeMove(source,target,i,B,0,0,0,0));
+                            addMove(list,encodeMove(source,target,i,N,0,0,0,0));
+                        }
+                    }
+                    else{
+
+                        if((source >= a2 && source <= h2) && !getBit(occ[both],target)){
+                            addMove(list,encodeMove(source,target,i,0,0,0,0,0));
+                        }
+                        if((source >= a2 && source <= h2) && !getBit(occ[both],target - 8)){
+                            addMove(list,encodeMove(source,target - 8,i,0,0,1,0,0));
+                        }
+                    }
+                }
+                popBit(board,source);
+            }
+        }
+    }
+}
+
+
 void printBoard(){
     printf("   A B C D E F G H\n");
     for( int r = 0; r < 8; r ++){
@@ -354,8 +427,7 @@ void parseFEN(char* fen){
         // i / 6 gives side
             occ[i / p] |= boards[i];
         }
-        debugging(occ[white]);
-    occ[both] = occ[white] | occ[black];
+     occ[both] = occ[white] | occ[black];
 
 
 
