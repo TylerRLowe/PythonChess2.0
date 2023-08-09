@@ -287,7 +287,7 @@ static inline int squareAttacked(int sq, int side){
     if(getQueenAttacks(sq,occ[both]) & ((side) ? boards[q] : boards[Q])) return 1;
 
 
-
+    return 0;
 
 }
 static inline  void addMove(moves* list, int move){
@@ -326,11 +326,53 @@ void moveGen(moves* list){
                             addMove(list,encodeMove(source,target,i,0,0,0,0,0));
                         }
                         if((source >= a2 && source <= h2) && !getBit(occ[both],target - 8)){
-                            addMove(list,encodeMove(source,target - 8,i,0,0,1,0,0));
+                            addMove(list,encodeMove(source,(target - 8),i,0,0,1,0,0));
                         }
                     }
                 }
+                attacks = pawnAttacks[turn][source] & occ[black];
+
+                while(attacks){
+                    target = getLSB(attacks);
+                    if((source >= a7) && (source <= h7)){
+                        addMove(list,encodeMove(source,target,i,Q,1,0,0,0));
+                        addMove(list,encodeMove(source,target,i,R,1,0,0,0));
+                        addMove(list,encodeMove(source,target,i,B,1,0,0,0));
+                        addMove(list,encodeMove(source,target,i,N,1,0,0,0));
+                    }
+                    else{
+                        addMove(list,encodeMove(source,target,i,0,1,0,0,0));
+                    }      
+                    popBit(attacks,target);                  
+                }
+                if (enpassent |= noSq){
+                    u64 enpassentAttacks = pawnAttacks[turn][source] & (bit << enpassent);
+
+                    if(enpassentAttacks){
+
+                        int target_en = getLSB(enpassentAttacks);
+                        addMove(list,encodeMove(source,target_en,i,0,1,0,1,0));
+                    }
+                }
                 popBit(board,source);
+            }
+            if(i == K){
+                if(castle && wk){ //g1 is between rook and king
+                    if(!getBit(occ[both],f1) && !getBit(occ[both],g1)){
+                        //making sure the free sqs are not attacked
+                        if(!squareAttacked(e1,black) && !squareAttacked(f1,black)){
+                            addMove(list, encodeMove(e1,g1,i,0,0,0,0,1));
+                        } 
+                    }
+                }//TODO check this
+                if(castle && wq){
+                    if(!getBit(occ[both],d1) && !getBit(occ[both],c1) && !getBit(occ[both], b1)){
+                        //making sure the free sqs are not attacked
+                        if(!squareAttacked(e1,black) && !squareAttacked(d1,black)){
+                            addMove(list, encodeMove(e1,c1,i,0,0,0,0,1));
+                        }
+                    }
+                }
             }
         }
     }
