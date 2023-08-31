@@ -29,7 +29,7 @@ void moveGen();
 u64 pawnAttacks[2][64];
 
 //both sides have same attacks
-u64 kingtAttacks[64];
+u64 kingAttacks[64];
 
 u64 knightAttacks[64];
 
@@ -79,14 +79,14 @@ u64 knightMask(int sq){
     attacks |= (bitBoard >> 17 & notHFile) | (bitBoard << 17 & notAFile); 
     attacks |= (bitBoard >> 15 & notAFile) | (bitBoard << 15 & notHFile); 
     attacks |= (bitBoard >> 10 & notHGFile) | (bitBoard << 10 & notABFile);
-    attacks |= (bitBoard >> 6 & notABFile) | (bitBoard >> 6 & notABFile);  
+    attacks |= (bitBoard >> 6 & notABFile) | (bitBoard << 6 & notHGFile);  
     
     return attacks;
 
 }
 
 
-u64 pawnMask(int sq, int color){
+u64 pawnMask(int color, int sq){
     u64 bitBoard = 0;
 
     u64 attacks = 0;
@@ -94,13 +94,16 @@ u64 pawnMask(int sq, int color){
 
     //  black
  
-    attacks |= ((bitBoard << 7) & notHFile & color);
-    attacks |= ((bitBoard << 9) & notAFile & color);
+    if(color){
+        attacks |= ((bitBoard << 7) & notHFile);
+        attacks |= ((bitBoard << 9) & notAFile);
+    }
     
     //white
-    attacks |= ((bitBoard >> 7) & notAFile & ~ color);
-    attacks |= ((bitBoard >> 9) & notHFile & ~ color);
-
+    else{
+        attacks |= ((bitBoard >> 7) & notAFile);
+        attacks |= ((bitBoard >> 9) & notHFile);
+    }
     return attacks;
 }
 
@@ -113,7 +116,7 @@ void initLeaps(){
         pawnAttacks[white][sq] = pawnMask(white, sq);
         pawnAttacks[black][sq] = pawnMask(black, sq);
         knightAttacks[sq] = knightMask(sq);
-        knightAttacks[sq] = kingMask(sq);
+        kingAttacks[sq] = kingMask(sq);
     }
 }
 
@@ -276,7 +279,7 @@ static inline int squareAttacked(int sq, int side){
 
     if(((side)) && (pawnAttacks[white][sq]) & boards[p]) return 1;
 
-    if((kingtAttacks[sq] & ((side) ? boards[k] : boards[K]))) return 1;
+    if((kingAttacks[sq] & ((side) ? boards[k] : boards[K]))) return 1;
 
     if((knightAttacks[sq] & ((side) ? boards[n] : boards[N]))) return 1;
 
@@ -294,7 +297,43 @@ static inline  void addMove(moves* list, int move){
     list->moves[list->c] = move;
     list->c += 1;
 }
+void printMoveList(moves *list)
+{
+    // do nothing on empty move list
+    printf("%d",turn);
+    if (!list->c)
+    {
+        return;
+    }
+    int cap = 0;
+    int dou = 0;
+    int enp = 0;
+    int castling = 0;
+    printf("\ncapture   double    enpass    castling\n\n");
+        for (int i = 0; i < list->c; i++)
+    {
+        int move = list->moves[i];
+        cap += (int)(getMoveCapture(move)? 1 : 0);
+        dou += (int)(getMoveDouble(move)? 1 : 0);
+        enp += (int)(getMoveEnpassant(move)? 1 : 0);
+        castling += (int)(getMoveCastling(move)? 1 : 0);
 
+                    // printf("      %s%s%c   %c         %d         %d         %d         %d\n", sqRF[getMoveSource(move)],
+                    //                                                               sqRF[getMoveTarget(move)],
+                    //                                                               getMovePromoted(move) ? charPiece[getMovePromoted(move)] : ' ',
+                    //                                                               pieceChar[getMovePiece(move)],
+                    //                                                               getMoveCapture(move) ? 1 : 0,
+                    //                                                               getMoveDouble(move) ? 1 : 0,
+                    //                                                               getMoveEnpassant(move) ? 1 : 0,
+                    //                                                               getMoveCastling(move) ? 1 : 0);
+        
+    }
+    printf("%d          %d          %d           %d",cap,dou, enp, castling);
+    
+    // print total number of moves
+    printf("\n\n     Total number of moves: %d\n\n", list->c);
+
+}
 void moveGen(moves* list){
     list->c = 0;
     int source;
@@ -303,11 +342,9 @@ void moveGen(moves* list){
     u64 attacks;
     for (int i = P; i <= k; i++){
         board = boards[i];
-
         if(turn == white){
             board = boards[i];
-
-            if (i == p){
+            if (i == P){
                 while(board){
                     source = getLSB(board);
                     target = source - 8;
@@ -319,12 +356,10 @@ void moveGen(moves* list){
                             addMove(list,encodeMove(source,target,i,B,0,0,0,0));
                             addMove(list,encodeMove(source,target,i,N,0,0,0,0));
                         }
-                    }
+                    
                     else{
 
-                        if((source >= a2 && source <= h2) && !getBit(occ[both],target)){
-                            addMove(list,encodeMove(source,target,i,0,0,0,0,0));
-                        }
+                        addMove(list,encodeMove(source,target,i,0,0,0,0,0));
                         if((source >= a2 && source <= h2) && !getBit(occ[both],target - 8)){
                             addMove(list,encodeMove(source,(target - 8),i,0,0,1,0,0));
                         }
@@ -345,16 +380,18 @@ void moveGen(moves* list){
                     }      
                     popBit(attacks,target);                  
                 }
-                if (enpassent |= noSq){
+                if (enpassent != noSq){
                     u64 enpassentAttacks = pawnAttacks[turn][source] & (bit << enpassent);
 
                     if(enpassentAttacks){
 
                         int target_en = getLSB(enpassentAttacks);
                         addMove(list,encodeMove(source,target_en,i,0,1,0,1,0));
+                        }
                     }
-                }
                 popBit(board,source);
+                }
+                
             }
             if(i == K){
                 if(castle && wk){ //g1 is between rook and king
@@ -375,6 +412,185 @@ void moveGen(moves* list){
                 }
             }
         }
+        //bp and bk
+        else{
+            if (i == p){
+                while(board){
+                    source = getLSB(board);
+                    target = source - 8;
+
+                    if (!(target > h1) && !(getBit(occ[both],target))){
+                        if (source >= a2 && source <= h2){
+                            addMove(list,encodeMove(source,target,i,q,0,0,0,0));
+                            addMove(list,encodeMove(source,target,i,r,0,0,0,0));
+                            addMove(list,encodeMove(source,target,i,b,0,0,0,0));
+                            addMove(list,encodeMove(source,target,i,n,0,0,0,0));
+                        }
+                    }
+                    else{
+                        addMove(list,encodeMove(source,target,i,0,0,0,0,0));
+                        
+                        if((source >= a2 && source <= h2) && !getBit(occ[both],target - 8)){
+                            addMove(list,encodeMove(source,(target - 8),i,0,0,1,0,0));
+                        }
+                    }
+                
+                attacks = pawnAttacks[turn][source] & occ[white];
+
+                while(attacks){
+                    target = getLSB(attacks);
+                    if((source >= a2) && (source <= h2)){
+                        addMove(list,encodeMove(source,target,i,q,1,0,0,0));
+                        addMove(list,encodeMove(source,target,i,r,1,0,0,0));
+                        addMove(list,encodeMove(source,target,i,b,1,0,0,0));
+                        addMove(list,encodeMove(source,target,i,n,1,0,0,0));
+                    }
+                    else{
+                        addMove(list,encodeMove(source,target,i,0,1,0,0,0));
+                    }      
+                    popBit(attacks,target);                  
+                }
+                if (enpassent != noSq){
+                    u64 enpassentAttacks = pawnAttacks[turn][source] & (bit << enpassent);
+
+                    if(enpassentAttacks){
+
+                        int target_en = getLSB(enpassentAttacks);
+                        addMove(list,encodeMove(source,target_en,i,0,1,0,1,0));
+                        }
+                    } 
+                    popBit(board,source);
+
+                }
+
+               
+            }
+
+            if(i == k){
+                if(castle && bk){ //g1 is between rook and king
+                    if(!getBit(occ[both],f8) && !getBit(occ[both],g8)){
+                        //making sure the free sqs are not attacked
+                        if(!squareAttacked(e8,white) && !squareAttacked(f8,white)){
+                            addMove(list, encodeMove(e8,g8,i,0,0,0,0,1));
+                        } 
+                    }
+                }//TODO check this
+                if(castle && bq){
+                    if(!getBit(occ[both],d8) && !getBit(occ[both],c8) && !getBit(occ[both], b8)){
+                        //making sure the free sqs are not attacked
+                        if(!squareAttacked(e8,white) && !squareAttacked(d8,white)){
+                            addMove(list, encodeMove(e1,c1,i,0,0,0,0,1));
+                        }
+                    }
+                }
+            }
+        
+        }
+
+        if((turn == white && i == N) || (turn == black && i == n)){
+            while (board){
+                source = getLSB(board);
+                attacks = knightAttacks[source] & ((turn == white) ? ~occ[white] : ~occ[black]);
+
+                while (attacks){
+                    target = getLSB(attacks);
+
+                    if(!getBit(((turn == white) ? occ[black] : occ[white]), target)){
+                        addMove(list,encodeMove(source,target,i,0,0,0,0,0));
+                    }
+                    else{
+                        addMove(list,encodeMove(source,target,i,0,1,0,0,0));
+                    }
+                    popBit(attacks,target);
+                }
+
+                popBit(board,source);
+            }
+        }
+        if((turn == white && i == B) || (turn == black && i == b)){
+            while (board){
+                source = getLSB(board);
+                attacks = getBishopAttacks(source,occ[both]) & ((turn == white) ? ~occ[white] : ~occ[black]);
+
+                while (attacks){
+                    target = getLSB(attacks);
+
+                    if(!getBit(((turn == white) ? occ[black] : occ[white]), target)){
+                        addMove(list,encodeMove(source,target,i,0,0,0,0,0));
+                    }
+                    else{
+                        addMove(list,encodeMove(source,target,i,0,1,0,0,0));
+                    }
+                    popBit(attacks,target);
+                }
+
+                popBit(board,source);
+            }
+        }
+
+        if((turn == white && i == R) || (turn == black && i == r)){
+            while (board){
+                source = getLSB(board);
+                attacks = getRookAttacks(source,occ[both]) & ((turn == white) ? ~occ[white] : ~occ[black]);
+
+                while (attacks){
+                    target = getLSB(attacks);
+
+                    if(!getBit(((turn == white) ? occ[black] : occ[white]), target)){
+                        addMove(list,encodeMove(source,target,i,0,0,0,0,0));
+                    }
+                    else{
+                        addMove(list,encodeMove(source,target,i,0,1,0,0,0));
+                    }
+                    popBit(attacks,target);
+                }
+
+                popBit(board,source);
+            }
+        }
+        if((turn == white && i == Q) || (turn == black && i == q)){
+            while (board){
+                source = getLSB(board);
+                attacks = getQueenAttacks(source,occ[both]) & ((turn == white) ? ~occ[white] : ~occ[black]);
+
+                while (attacks){
+                    target = getLSB(attacks);
+
+                    if(!getBit(((turn == white) ? occ[black] : occ[white]), target)){
+                        addMove(list,encodeMove(source,target,i,0,0,0,0,0));
+                    }
+                    else{
+                        addMove(list,encodeMove(source,target,i,0,1,0,0,0));
+                    }
+                    popBit(attacks,target);
+                }
+
+                popBit(board,source);
+            }
+        }
+
+        if((turn == white && i == K) || (turn == black && i == k)){
+            while (board){
+                source = getLSB(board);
+                attacks = kingAttacks[source] & ((turn == white) ? ~occ[white] : ~occ[black]);
+
+                while (attacks){
+                    target = getLSB(attacks);
+
+                    if(!getBit(((turn == white) ? occ[black] : occ[white]), target)){
+                        addMove(list,encodeMove(source,target,i,0,0,0,0,0));
+                    }
+                    else{
+                        addMove(list,encodeMove(source,target,i,0,1,0,0,0));
+                    }
+                    popBit(attacks,target);
+                }
+
+                popBit(board,source);
+            }
+        }
+
+
     }
 }
 
@@ -399,7 +615,7 @@ void printBoard(){
 void parseFEN(char* fen){
     memset(boards, 0ULL, sizeof(boards));
     memset(occ, 0ULL, sizeof(occ));
-    turn = -1;
+    turn = 0;
     enpassent = noSq;
     castle = 0;
     for(int r = 0; r < 8; r++){
@@ -426,13 +642,15 @@ void parseFEN(char* fen){
                 if(piece == -1) f--;
                 fen++;
             }
+         if(*fen == '/') fen++;
         }
-        if(*fen == '/') fen++;
+       
 
     }
-
+    fen ++;
     //board state
     (*fen == 'w') ? (turn = white) : (turn = black);
+    printf("%d\n",turn);
 
     fen += 2;
     
@@ -479,9 +697,12 @@ int main(){
     initLeaps();
     initSliders(1);
     initSliders(0);
-    parseFEN(trickyPosition);
+    char* fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    parseFEN(fen);
     printBoard();
-
+    moves moveList[1];
+    moveGen(moveList);
+    printMoveList(moveList);
     
     return 0;
 }

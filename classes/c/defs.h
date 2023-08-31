@@ -78,6 +78,17 @@ int pieceChar[] = {
 
 };
 
+int charPiece[] = {
+    [Q] = 'q',
+    [R] = 'r',
+    [B] = 'b',
+    [N] = 'n',
+    [q] = 'q',
+    [r] = 'r',
+    [b] = 'b',
+    [n] = 'n'
+};
+
 const int bRB[] = {6, 5, 5, 5, 5, 5, 5, 6,
  5, 5, 5, 5, 5, 5, 5, 5,
  5, 5, 7, 7, 7, 7, 5, 5,
@@ -104,7 +115,14 @@ const int bRB[] = {6, 5, 5, 5, 5, 5, 5, 6,
 #define notHGFile 4557430888798830399ULL
 #define bit 1ULL
 
-
+#define getMoveSource(move) (move & 0x3f)
+#define getMoveTarget(move) ((move & 0xfc0) >> 6)
+#define getMovePiece(move) ((move & 0xf000) >> 12)
+#define getMovePromoted(move) ((move & 0xf0000) >> 16)
+#define getMoveCapture(move) (move & 0x100000)
+#define getMoveDouble(move) (move & 0x200000)
+#define getMoveEnpassant(move) (move & 0x400000)
+#define getMoveCastling(move) (move & 0x800000)
 #define encodeMove(so,ta,pi,pr,ca,dou,en,cast) (so) | (ta << 6) | (pi << 12) | (pr << 16) | (ca << 20) | (dou << 21) | (en << 22) | (cast <<23)
 #define getSource(move) (move & 0x3f)
 #define getTarget(move) ((move & 0xfc0) >> 6)
